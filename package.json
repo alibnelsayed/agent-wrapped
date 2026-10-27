@@ -27,5 +27,10 @@
   "engines": {
     "node": ">=18"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alibnelsayed/agent-wrapped.git"
+  },
+  "homepage": "https://github.com/alibnelsayed/agent-wrapped#readme",
   "license": "MIT"
 }

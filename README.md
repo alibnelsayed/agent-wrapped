@@ -72,7 +72,7 @@ npx agent-wrapped --json       # raw stats, pipe it anywhere
 ## Try it without your own data
 
 ```bash
-git clone https://github.com/alwaan-pro/agent-wrapped
+git clone https://github.com/alibnelsayed/agent-wrapped
 cd agent-wrapped
 npm run fixtures && npm run demo
 ```

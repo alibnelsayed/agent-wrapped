@@ -1,6 +1,6 @@
 'use strict';
 
-const REPO = 'https://github.com/alwaan-pro/agent-wrapped';
+const REPO = 'https://github.com/alibnelsayed/agent-wrapped';
 
 function renderHTML(stats, opts = {}) {
   const data = JSON.stringify({ ...stats, title: opts.title || 'Agent Wrapped', repo: REPO }).replace(/</g, '\\u003c');
