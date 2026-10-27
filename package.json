@@ -1,0 +1,31 @@
+{
+  "name": "agent-wrapped",
+  "version": "1.0.0",
+  "description": "Spotify Wrapped for your AI coding agent. See your year with Claude Code and Codex: tokens, tools, habits, and how many times it said \"You're absolutely right\".",
+  "bin": {
+    "agent-wrapped": "bin/agent-wrapped.js"
+  },
+  "files": [
+    "bin",
+    "src"
+  ],
+  "scripts": {
+    "test": "node --test test/stats.test.js",
+    "fixtures": "node test/make-fixtures.js demo",
+    "demo": "node bin/agent-wrapped.js --all --dir demo/claude --dir demo/codex --out demo/agent-wrapped.html"
+  },
+  "keywords": [
+    "claude-code",
+    "codex",
+    "wrapped",
+    "ai-agent",
+    "year-in-review",
+    "cli",
+    "stats",
+    "tokens"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT"
+}
