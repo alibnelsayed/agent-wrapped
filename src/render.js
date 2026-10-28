@@ -11,14 +11,14 @@ function renderHTML(stats, opts = {}) {
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Agent Wrapped</title>
 <style>
-:root{--fg:#fff;--muted:rgba(255,255,255,.72);--card:rgba(255,255,255,.1)}
+:root{--fg:#fff;--muted:rgba(255,255,255,.6);--card:rgba(255,255,255,.07);--accent:#b6f500}
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;background:#0b0b10;color:var(--fg);font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow:hidden}
 #stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
 .slide{position:absolute;inset:0;display:none;flex-direction:column;justify-content:center;padding:72px max(24px,calc(50vw - 300px)) 56px;transition:opacity .4s}
 .slide.on{display:flex;animation:in .55s cubic-bezier(.2,.8,.2,1)}
 @keyframes in{from{opacity:0;transform:translateY(24px) scale(.98)}to{opacity:1;transform:none}}
-.kicker{font-size:14px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;font-weight:600}
+.kicker{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:14px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin-bottom:14px;font-weight:600}
 h1{font-size:clamp(40px,9vw,84px);line-height:.95;font-weight:900;letter-spacing:-.03em}
 h2{font-size:clamp(28px,6vw,48px);line-height:1.05;font-weight:850;letter-spacing:-.02em;margin-bottom:18px}
 .big{font-size:clamp(64px,18vw,160px);font-weight:900;line-height:.9;letter-spacing:-.05em;font-variant-numeric:tabular-nums}
@@ -27,32 +27,33 @@ p.sub{font-size:clamp(17px,3.2vw,22px);color:var(--muted);margin-top:16px;line-h
 .pill{background:var(--card);border-radius:999px;padding:10px 16px;font-weight:650;font-size:15px;backdrop-filter:blur(6px)}
 .bars{display:flex;flex-direction:column;gap:10px;margin-top:8px}
 .bar{position:relative;background:var(--card);border-radius:12px;padding:12px 14px;display:flex;justify-content:space-between;font-weight:700;overflow:hidden;font-size:17px}
-.bar i{position:absolute;inset:0 auto 0 0;background:rgba(255,255,255,.22);border-radius:12px;transform-origin:left;animation:grow 1s cubic-bezier(.2,.8,.2,1) both}
+.bar i{position:absolute;inset:0 auto 0 0;background:rgba(182,245,0,.28);border-radius:12px;transform-origin:left;animation:grow 1s cubic-bezier(.2,.8,.2,1) both}
 .bar span{position:relative;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:75%}.bar b{position:relative;font-variant-numeric:tabular-nums}
 @keyframes grow{from{transform:scaleX(0)}}
 .hours{display:flex;align-items:flex-end;gap:3px;height:140px;margin-top:18px}
 .hours div{flex:1;background:rgba(255,255,255,.35);border-radius:4px 4px 0 0;min-height:2px;animation:up .9s cubic-bezier(.2,.8,.2,1) both;transform-origin:bottom}
-.hours div.peak{background:#fff}
+.hours div.peak{background:var(--accent)}
 @keyframes up{from{transform:scaleY(0)}}
 .axis{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:6px}
 .heat{display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,1fr);gap:3px;margin-top:16px;overflow:hidden}
 .heat div{width:100%;aspect-ratio:1;border-radius:3px;background:rgba(255,255,255,.08)}
 #progress{position:fixed;top:14px;left:max(16px,calc(50vw - 300px));right:max(16px,calc(50vw - 300px));display:flex;gap:4px;z-index:5}
 #progress span{flex:1;height:4px;border-radius:2px;background:rgba(255,255,255,.25);overflow:hidden}
-#progress span.done{background:#fff}
+#progress span.done{background:var(--accent)}
 #hint{position:fixed;bottom:16px;width:100%;text-align:center;font-size:13px;color:var(--muted);z-index:5}
-.btn{display:inline-block;background:#fff;color:#111;border:0;border-radius:999px;padding:14px 22px;font-weight:800;font-size:16px;cursor:pointer;text-decoration:none;margin:8px 8px 0 0}
+.btn{display:inline-block;background:var(--accent);color:#0b0b0c;border:0;border-radius:999px;padding:14px 22px;font-weight:800;font-size:16px;cursor:pointer;text-decoration:none;margin:8px 8px 0 0}
 .btn.ghost{background:var(--card);color:#fff}
 canvas{width:100%;max-width:420px;border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,.4);margin-top:8px;align-self:flex-start}
 .emoji{font-size:56px;margin-bottom:12px}
-.g0{background:radial-gradient(120% 90% at 10% 0%,#ff4f8b 0%,#7b2ff7 45%,#120a2a 100%)}
-.g1{background:radial-gradient(120% 90% at 90% 0%,#00d2a8 0%,#0a6cff 50%,#06142e 100%)}
-.g2{background:radial-gradient(120% 90% at 0% 100%,#ffb800 0%,#ff5f1f 45%,#2a0b05 100%)}
-.g3{background:radial-gradient(120% 90% at 100% 100%,#b6f500 0%,#11998e 50%,#04201c 100%)}
-.g4{background:radial-gradient(120% 90% at 50% 0%,#ff7ad9 0%,#5d3cff 55%,#0b0726 100%)}
-.g5{background:radial-gradient(120% 90% at 0% 0%,#3b3b3b 0%,#111 60%,#000 100%)}
-.g6{background:radial-gradient(120% 90% at 80% 20%,#ff3d3d 0%,#a0005a 50%,#1a0010 100%)}
-.g7{background:radial-gradient(120% 90% at 20% 80%,#00e5ff 0%,#6a00ff 55%,#0a0020 100%)}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+.g0{background:radial-gradient(120% 90% at 10% 0%,rgba(182,245,0,.16) 0%,#0c0c0e 55%,#070708 100%)}
+.g1{background:radial-gradient(120% 90% at 90% 0%,rgba(255,255,255,.10) 0%,#0c0c0e 55%,#070708 100%)}
+.g2{background:radial-gradient(120% 90% at 0% 100%,rgba(182,245,0,.12) 0%,#0c0c0e 55%,#070708 100%)}
+.g3{background:radial-gradient(120% 90% at 100% 100%,rgba(255,255,255,.08) 0%,#0c0c0e 55%,#070708 100%)}
+.g4{background:radial-gradient(120% 90% at 50% 0%,rgba(182,245,0,.14) 0%,#0c0c0e 55%,#070708 100%)}
+.g5{background:radial-gradient(120% 90% at 0% 0%,rgba(255,255,255,.06) 0%,#0c0c0e 55%,#070708 100%)}
+.g6{background:radial-gradient(120% 90% at 80% 20%,rgba(182,245,0,.18) 0%,#0c0c0e 55%,#070708 100%)}
+.g7{background:radial-gradient(120% 90% at 20% 80%,rgba(255,255,255,.10) 0%,#0c0c0e 55%,#070708 100%)}
 </style>
 </head>
 <body>
@@ -95,6 +96,7 @@ slides.forEach((s, i) => {
 let cur = -1;
 function countUp(el) {
   const target = +el.dataset.count, useFmt = el.dataset.fmt, t0 = performance.now();
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) { el.textContent = useFmt ? fmt(target) : target.toLocaleString('en-US'); return; }
   const step = (t) => { const k = Math.min(1, (t - t0) / 1200), v = Math.round(target * (1 - Math.pow(1 - k, 3))); el.textContent = useFmt ? fmt(v) : v.toLocaleString('en-US'); if (k < 1) requestAnimationFrame(step); };
   requestAnimationFrame(step);
 }
@@ -129,30 +131,37 @@ function drawHeat() {
 
 function drawCard() {
   const c = document.getElementById('card'), x = c.getContext('2d'), W = c.width, H = c.height;
-  const g = x.createLinearGradient(0, 0, W, H); g.addColorStop(0, '#ff4f8b'); g.addColorStop(.5, '#7b2ff7'); g.addColorStop(1, '#0a6cff');
+  const LIME = '#b6f500', DIM = '#7a7a7a', TXT = '#e6e6e6';
+  const rr = (X, Y, w, h, r) => { x.beginPath(); x.roundRect(X, Y, w, h, r); };
+  x.fillStyle = '#070708'; x.fillRect(0, 0, W, H);
+  const g = x.createRadialGradient(W * .8, 0, 0, W * .8, 0, W); g.addColorStop(0, 'rgba(182,245,0,.14)'); g.addColorStop(1, 'rgba(0,0,0,0)');
   x.fillStyle = g; x.fillRect(0, 0, W, H);
-  x.fillStyle = 'rgba(0,0,0,.18)'; x.fillRect(60, 60, W - 120, H - 120);
-  x.fillStyle = '#fff'; x.textBaseline = 'top';
-  const font = (w, s) => w + ' ' + s + 'px ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,sans-serif';
-  x.font = font(800, 34); x.globalAlpha = .8; x.fillText('AGENT WRAPPED ' + (S.range.to || '').slice(0, 4), 110, 110); x.globalAlpha = 1;
-  x.font = font(900, 84); x.fillText(persona.title, 110, 170, W - 220);
+  rr(60, 60, W - 120, H - 120, 28); x.fillStyle = '#0e0e10'; x.fill(); x.strokeStyle = '#2c2c30'; x.lineWidth = 2; x.stroke();
+  rr(60, 60, W - 120, 74, 28); x.fillStyle = '#18181b'; x.fill(); x.fillRect(60, 110, W - 120, 24);
+  ['#ff5f57', '#febc2e', '#28c840'].forEach((col, i) => { x.beginPath(); x.arc(104 + i * 36, 97, 11, 0, 7); x.fillStyle = col; x.fill(); });
+  const mono = (s, w) => (w || 400) + ' ' + s + 'px ui-monospace,Menlo,Consolas,monospace';
+  const sans = (s) => '800 ' + s + 'px ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,sans-serif';
+  x.textBaseline = 'top'; x.textAlign = 'center'; x.font = mono(26); x.fillStyle = DIM; x.fillText('agent-wrapped', W / 2, 84); x.textAlign = 'left';
+  x.font = mono(34); x.fillStyle = LIME; x.fillText('$', 110, 180); x.fillStyle = TXT; x.fillText('npx agent-wrapped', 150, 180);
+  x.font = mono(30); x.fillStyle = DIM; x.fillText('> ' + (S.range.to || '').slice(0, 4) + ' · you are', 110, 250);
+  x.font = sans(76); x.fillStyle = LIME; x.fillText(persona.title, 110, 300, W - 220);
   const cells = [
-    ['Prompts', fmt(S.userMessages)], ['Tokens', fmt(S.totalTokens)],
-    ['Tool calls', fmt(S.toolCalls)], ['Hours paired', String(S.activeHours)],
-    ['Peak hour', hour12(S.peakHour)], ['Streak', S.longestStreak + ' days'],
-    ['Top tool', (S.topTools[0] || {}).name || '-'], ['"Absolutely right"', fmt(S.phrases.absolutelyRight) + '×'],
+    ['prompts', fmt(S.userMessages)], ['tokens', fmt(S.totalTokens)],
+    ['tool calls', fmt(S.toolCalls)], ['hours paired', String(S.activeHours)],
+    ['peak hour', hour12(S.peakHour)], ['streak', S.longestStreak + ' days'],
+    ['top tool', (S.topTools[0] || {}).name || '-'], ['"absolutely right"', fmt(S.phrases.absolutelyRight) + '×'],
   ];
   cells.forEach(([k, v], i) => {
-    const cx = 110 + (i % 2) * 440, cy = 330 + Math.floor(i / 2) * 210;
-    x.globalAlpha = .75; x.font = font(700, 30); x.fillText(k, cx, cy); x.globalAlpha = 1;
-    x.font = font(900, 72); x.fillText(String(v), cx, cy + 44, 400);
+    const cx = 110 + (i % 2) * 440, cy = 440 + Math.floor(i / 2) * 175;
+    x.font = mono(28); x.fillStyle = DIM; x.fillText(k, cx, cy);
+    x.font = sans(64); x.fillStyle = i === 7 ? LIME : TXT; x.fillText(String(v), cx, cy + 40, 400);
   });
-  x.globalAlpha = .85; x.font = font(700, 30); x.fillText('npx agent-wrapped', 110, H - 150); x.globalAlpha = 1;
+  x.font = mono(26); x.fillStyle = DIM; x.fillText('github.com/alibnelsayed/agent-wrapped', 110, H - 140);
   document.getElementById('dl').onclick = () => { const a = document.createElement('a'); a.download = 'agent-wrapped.png'; a.href = c.toDataURL('image/png'); a.click(); };
   const text = 'My AI coding agent said "You\\'re absolutely right" ' + S.phrases.absolutelyRight + ' times this year. I sent ' + fmt(S.userMessages) + ' prompts and burned ' + fmt(S.totalTokens) + ' tokens.\\n\\nI am ' + persona.title + '. What are you?\\n\\nnpx agent-wrapped #AgentWrapped';
   document.getElementById('share').href = 'https://x.com/intent/post?text=' + encodeURIComponent(text) + '&url=' + encodeURIComponent(S.repo);
 }
-go(0);
+go(parseInt(location.hash.slice(1), 10) || 0);
 </script>
 </body>
 </html>`;
