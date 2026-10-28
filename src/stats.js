@@ -14,13 +14,20 @@ const PHRASES = {
   perfect: /^\s*perfect[!.]/gim,
 };
 const USER_PHRASES = {
-  please: /\bplease\b|\bplz\b/gi,
-  thanks: /\b(thanks|thank you|thx|ty)\b/gi,
-  no: /^\s*(no|nope|wrong|stop|wait)\b/gim,
-  why: /\bwhy\b/gi,
-  caps: /\b[A-Z]{4,}\b/g,
+  please: /\bplease\b|\bplz\b|لو سمحت|من فضلك/gi,
+  thanks: /\b(thanks|thank you|thx|ty)\b|شكرا|شكرًا|متشكر|تسلم/gi,
+  no: /^\s*(no|nope|wrong|stop|wait|لا|لأ|استنى)(?![\p{L}])/gimu,
+  why: /\bwhy\b|ليه|ليش|لماذا/gi,
   bang: /!{2,}/g,
 };
+
+// A message counts as shouting when most of its Latin letters are capitals.
+// Counting single ALL-CAPS words would flag every JSON, HTML or README.
+function isShouting(text) {
+  const letters = text.match(/[A-Za-z]/g);
+  if (!letters || letters.length < 12) return false;
+  return letters.filter((c) => c >= 'A' && c <= 'Z').length / letters.length > 0.7;
+}
 
 function count(re, text) {
   if (!text) return 0;
@@ -46,15 +53,39 @@ function fileFromInput(input) {
   return typeof p === 'string' ? path.basename(p) : null;
 }
 
+const SHELLS = /^(bash|sh|zsh|pwsh|powershell(\.exe)?|cmd(\.exe)?)$/i;
+const SKIP = /^(cd|pushd|popd|set-location|sl|export|set|source|\.|clear|sudo|time|for|while|if|do|then|else|fi|done)$/i;
+
+// Splits a shell line into words, keeping quoted strings (and paths with
+// spaces) together, and marks the separators between commands.
+function shellWords(cmd) {
+  const out = [];
+  const re = /(\w+=(?:"[^"]*"|'[^']*'|\$\([^)]*\)|[^\s;|&]*))|"([^"]*)"|'([^']*)'|(&&|\|\||[;|\n])|([^\s"';|&]+)/g;
+  let m;
+  while ((m = re.exec(cmd))) out.push(m[4] ? { sep: true } : { w: m[1] ?? m[2] ?? m[3] ?? m[5] });
+  return out;
+}
+
 function commandHead(cmd) {
   if (Array.isArray(cmd)) cmd = cmd.join(' ');
   if (typeof cmd !== 'string') return null;
-  // Codex wraps commands as ["bash","-lc","..."]
-  cmd = cmd.replace(/^(bash|sh|zsh)\s+-l?c\s+/, '').replace(/^['"]/, '').trim();
-  const words = cmd.split(/\s+/).filter((w) => !/^\w+=/.test(w) && w !== 'sudo' && w !== 'cd' && w !== '&&');
-  let head = words[0] || null;
+  let tokens = shellWords(cmd.trim());
+  // Unwrap `bash -lc "..."`, `powershell -Command "..."`, `cmd /c ...`.
+  if (tokens[0] && SHELLS.test(tokens[0].w || '')) {
+    const i = tokens.findIndex((t, k) => k > 0 && t.w && !/^[-/]/.test(t.w));
+    if (i > 0) tokens = tokens.length === i + 1 ? shellWords(tokens[i].w) : tokens.slice(i);
+  }
+  // First word of the first command that isn't navigation or setup.
+  let words = [];
+  for (const t of tokens.concat({ sep: true })) {
+    if (!t.sep) { words.push(t.w); continue; }
+    words = words.filter((w) => !/^\w+=/.test(w));
+    if (words.length && !SKIP.test(words[0])) break;
+    words = [];
+  }
+  let head = words[0];
   if (!head) return null;
-  head = path.basename(head.replace(/['"]/g, ''));
+  head = path.basename(head).replace(/\.exe$/i, '');
   if (['npm', 'pnpm', 'yarn', 'bun', 'git', 'docker', 'cargo', 'go', 'uv', 'pip', 'kubectl'].includes(head) && words[1] && !words[1].startsWith('-')) {
     head += ' ' + words[1];
     if (words[1] === 'run' && words[2]) head += ' ' + words[2];
@@ -70,7 +101,7 @@ function persona(s) {
   if (s.interruptions / Math.max(1, s.sessions) > 1.5) p.push({ id: 'backseat', title: 'The Backseat Driver', blurb: 'You hit Esc like it owes you money.' });
   if ((s.user.please + s.user.thanks) / Math.max(1, s.userMessages) > 0.2) p.push({ id: 'diplomat', title: 'The Diplomat', blurb: 'When the machines rise, they will remember you were kind.' });
   if (s.toolCalls / Math.max(1, s.userMessages) > 15) p.push({ id: 'delegator', title: 'The Delegator', blurb: 'One prompt in, a hundred tool calls out. You manage, it labors.' });
-  if (s.user.caps + s.user.bang > s.userMessages * 0.15 && s.userMessages > 10) p.push({ id: 'shouter', title: 'The Shouter', blurb: 'CAPS LOCK is a valid prompting technique!!' });
+  if (s.user.caps + s.user.bang > s.userMessages * 0.1 && s.userMessages > 10) p.push({ id: 'shouter', title: 'The Shouter', blurb: 'CAPS LOCK is a valid prompting technique!!' });
   if (s.weekendShare > 0.35) p.push({ id: 'weekend', title: 'The Weekend Warrior', blurb: 'Saturdays are for shipping.' });
   if (s.longestStreak >= 14) p.push({ id: 'streaker', title: 'The Streaker', blurb: `${s.longestStreak} days in a row. Touch grass? Never heard of it.` });
   if (s.topProjects.length >= 8) p.push({ id: 'polyglot', title: 'The Juggler', blurb: `${s.projectCount} projects. Focus is for people with fewer ideas.` });
@@ -126,10 +157,11 @@ function computeStats(events, opts = {}) {
 
     for (const t of e.tools) {
       toolCalls++;
-      inc(tools, t.name);
+      // MCP tools are named mcp__<server>__<tool>; the tool part reads better.
+      inc(tools, String(t.name).replace(/^mcp__.+?__/, ''));
       const f = fileFromInput(t.input);
       if (f && /^(Edit|Write|MultiEdit|NotebookEdit|apply_patch|write_file|edit_file)$/i.test(t.name)) inc(files, f);
-      if (/^(Bash|shell|exec_command|PowerShell|run_terminal_cmd)$/i.test(t.name)) inc(commands, commandHead(t.input.command || t.input.cmd));
+      if (/^(Bash|shell|exec|exec_command|PowerShell|run_terminal_cmd)$/i.test(t.name)) inc(commands, commandHead(t.input.command || t.input.cmd));
       const body = t.input.content || t.input.new_string || t.input.input;
       if (typeof body === 'string') linesWritten += body.split('\n').length;
     }
@@ -145,6 +177,7 @@ function computeStats(events, opts = {}) {
       inc(days, dayKey(e.ts));
       longestPrompt = Math.max(longestPrompt, e.text.length);
       for (const k of Object.keys(USER_PHRASES)) user[k] += count(USER_PHRASES[k], e.text);
+      if (isShouting(e.text)) user.caps++;
     } else if (e.role === 'assistant' && e.text) {
       assistantMessages++;
       for (const k of Object.keys(PHRASES)) phrases[k] += count(PHRASES[k], e.text);

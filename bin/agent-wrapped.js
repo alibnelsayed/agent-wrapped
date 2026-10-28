@@ -68,9 +68,18 @@ function main() {
   if (o.help) return console.log(HELP);
   if (o.version) return console.log(pkg.version);
 
+  if (o.year && !/^\d{4}$/.test(o.year)) die(`--year expects a year like 2026, got "${o.year}"`);
+  for (const k of ['since', 'until']) {
+    if (o[k] && isNaN(new Date(o[k]))) die(`--${k} expects a date like 2026-01-01, got "${o[k]}"`);
+  }
+
   const sources = o.dirs.length ? o.dirs.map((d) => ({ agent: /codex/i.test(d) ? 'codex' : 'claude-code', dir: path.resolve(d) })) : defaultSources();
   const { events, found } = loadEvents(sources);
-  if (!events.length) die('No agent transcripts found in ~/.claude/projects or ~/.codex/sessions.\nUse --dir <path> to point at a transcript folder.');
+  if (!events.length) {
+    die(o.dirs.length
+      ? `No agent transcripts (.jsonl) found in ${o.dirs.join(', ')}.`
+      : 'No agent transcripts found in ~/.claude/projects or ~/.codex/sessions.\nUse --dir <path> to point at a transcript folder.');
+  }
 
   let since = o.since, until = o.until;
   if (o.year) { since = `${o.year}-01-01T00:00:00`; until = `${+o.year + 1}-01-01T00:00:00`; }

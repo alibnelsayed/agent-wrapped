@@ -81,6 +81,27 @@ function parseClaude(file) {
   return events;
 }
 
+// Codex sends a lot of non-human text as "user" messages: environment and
+// instruction blocks, history summaries, attached-file dumps, app context.
+// Returns what the person actually typed, the Claude Code interruption marker
+// (so it is counted the same way), or null when the message should be ignored.
+function cleanCodexPrompt(text) {
+  let t = text.trim();
+  if (/^<turn_aborted>/.test(t)) return '[Request interrupted by user]';
+  if (/^The following is the Codex agent history/.test(t)) return null;
+  const req = t.match(/##\s*My request for Codex:?\s*([\s\S]*)$/);
+  if (req) t = req[1].trim();
+  else if (/^# Files (mentioned|pasted) by the user/.test(t)) return null;
+  // Strip leading injected <tag>...</tag> blocks.
+  let prev;
+  do {
+    prev = t;
+    t = t.replace(/^<([a-zA-Z_][\w-]*)[^>]*>[\s\S]*?<\/\1>\s*/, '').trim();
+  } while (t !== prev);
+  if (!t || /^<[a-zA-Z_][\w-]*[\s>]/.test(t)) return null;
+  return t;
+}
+
 function parseCodex(file) {
   const events = [];
   let session = path.basename(file, '.jsonl');
@@ -98,9 +119,12 @@ function parseCodex(file) {
     const base = { agent: 'codex', session, project, ts, text: '', tools: [], usage: null, model: null, toolResult: false, sidechain: false };
     if (d.type === 'turn_context' && p.cwd) project = path.basename(p.cwd);
     if (d.type === 'response_item' && p.type === 'message' && (p.role === 'user' || p.role === 'assistant')) {
-      const text = textOf(p.content);
-      // Codex injects environment context as user messages; skip those.
-      if (p.role === 'user' && /^\s*<(environment_context|user_instructions)/.test(text)) continue;
+      let text = textOf(p.content);
+      if (p.role === 'user') {
+        const cleaned = cleanCodexPrompt(text);
+        if (cleaned === null) continue;
+        text = cleaned;
+      }
       events.push({ ...base, role: p.role, text });
     } else if (d.type === 'response_item' && (p.type === 'function_call' || p.type === 'custom_tool_call' || p.type === 'local_shell_call')) {
       let input = {};
